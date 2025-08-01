@@ -24,7 +24,7 @@ jobs:
       - name: 📥 Download and unzip Edge Impulse model
         run: |
           curl -L \
-            --url "https://studio.edgeimpulse.com/v1/api/${EI_PROJECT_ID}/deployment/download?type=zip&impulse=14" \
+            --url "https://studio.edgeimpulse.com/v1/api/${EI_PROJECT_ID}/deployment/download?type=zip&impulse=16" \
             --header "x-api-key: ${EI_API_KEY}" \
             --header "Accept: */*" \
             --output model.zip && unzip -o model.zip -d model/
