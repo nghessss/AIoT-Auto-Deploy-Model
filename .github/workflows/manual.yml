@@ -3,11 +3,6 @@ name: Build and Upload AIoT Model
 on:
   push:
     branches: [main]
-    paths:
-      - 'readme.md'
-      - 'README.md'
-      - '**/readme.md'
-      - '**/README.md'
 
 jobs:
   build-aiot:

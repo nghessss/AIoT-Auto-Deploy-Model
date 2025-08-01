@@ -23,8 +23,8 @@
 #include "stream_server.h"
 
 
-#define EDGE_LOCATION static_cast<const char*>("")
-#define EDGE_UNIT_ID static_cast<const char*>("")
+static const char* EDGE_LOCATION = "";
+static const char* EDGE_UNIT_ID = "";
 
 static const char* TAG = "AIoT: AutoEye";
 
