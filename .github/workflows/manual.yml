@@ -35,19 +35,19 @@ jobs:
             --output model.zip && unzip -o model.zip -d model/
 
       - name: 📤 Push aiot-bin.bin to Hugging Face Hub
-          env:
-            HF_HOME: /tmp
-          run: |
-            git config --global user.email "action@github.com"
-            git config --global user.name "GitHub Action"
-            
-            git clone https://huggingface.co/${HF_REPO} hf-repo
-            cp aiot-bin.bin hf-repo/
-            
-            # Get original commit message
-            COMMIT_MSG=$(git log -1 --pretty=%B)
-        
-            cd hf-repo
-            git add aiot-bin.bin
-            git commit -m "$COMMIT_MSG"
-            git push https://huggingface.co/${HF_REPO} > /dev/null 2>&1
+        env:
+          HF_HOME: /tmp
+        run: |
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action"
+          
+          git clone https://huggingface.co/${HF_REPO} hf-repo
+          cp aiot-bin.bin hf-repo/
+          
+          # Get original commit message
+          COMMIT_MSG=$(git log -1 --pretty=%B)
+      
+          cd hf-repo
+          git add aiot-bin.bin
+          git commit -m "$COMMIT_MSG"
+          git push https://huggingface.co/${HF_REPO} > /dev/null 2>&1
