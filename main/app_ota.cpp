@@ -33,8 +33,7 @@ static const char *TAG = "AIoT: AutoEye OTA";
 
 #define OTA_URL_SIZE 256
 
-void ota_task(void *pvParameter)
-{
+void ota_task(){
     ESP_LOGI(TAG, "Starting OTA task");
 #ifdef CONFIG_FIRMWARE_UPGRADE_BIND_IF
     esp_netif_t *netif = get_example_netif_from_desc(bind_interface_name);
@@ -145,5 +144,5 @@ void ota_task(void *pvParameter)
 
 void check_for_update() {
     ESP_LOGI(TAG, "Checking for firmware updates...");
-    xTaskCreate(&ota_task, "ota_task", 8192, NULL, 5, NULL);
+    ota_task(); // Start OTA task
 }

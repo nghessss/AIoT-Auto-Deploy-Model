@@ -103,7 +103,7 @@ void init_model() {
 
     while(true) {
         run_model();
-        ei_sleep(1);
+        vTaskDelay( 10 / portTICK_PERIOD_MS );
     }
 }
 
