@@ -31,6 +31,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+#include <inttypes.h>
 
 #ifndef _EDGE_IMPULSE_RUN_CLASSIFIER_H_
 #define _EDGE_IMPULSE_RUN_CLASSIFIER_H_
@@ -140,7 +141,7 @@ __attribute__((unused)) void display_results(ei_impulse_handle_t *handle, ei_imp
         }
         ei_printf("    %s (", bb.label);
         ei_printf_float(bb.value);
-        #include <inttypes.h>
+        
         ei_printf(") [ x: %" PRIu32 ", y: %" PRIu32 ", width: %" PRIu32 ", height: %" PRIu32 " ]\n",
           bb.x, bb.y, bb.width, bb.height);
     }
