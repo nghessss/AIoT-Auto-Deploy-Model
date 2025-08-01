@@ -15,12 +15,6 @@ jobs:
       HF_REPO: nghes/ei-models
 
     steps:
-      - name: 🧰 Set up QEMU for ARM emulation
-        uses: docker/setup-qemu-action@v3
-
-      - name: 🐳 Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
       - name: 🔄 Checkout repository
         uses: actions/checkout@v3
 
@@ -40,7 +34,7 @@ jobs:
           cp -r model/model-parameters ./model-parameters
           cp -r model/tflite-model ./tflite-model
 
-      - name: 🛠 Run build script using ARM64 container
+      - name: 🛠 Run build script
         run: |
           git config --global --add safe.directory /opt/esp/idf/components/openthread/openthread
           chmod +x ./build.sh
@@ -52,14 +46,13 @@ jobs:
         run: |
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
-          
-          git clone https://huggingface.co/${HF_REPO} hf-repo
+
+          git clone https://${HF_TOKEN}@huggingface.co/${HF_REPO} hf-repo
           cp aiot-bin.bin hf-repo/
-          
-          # Get original commit message
+
           COMMIT_MSG=$(git log -1 --pretty=%B)
-      
+
           cd hf-repo
           git add aiot-bin.bin
           git commit -m "$COMMIT_MSG"
-          git push https://huggingface.co/${HF_REPO} > /dev/null 2>&1
+          git push https://${HF_TOKEN}@huggingface.co/${HF_REPO}
