@@ -117,10 +117,10 @@ esp_err_t publish_message(const MQTTMessage &msg) {
     struct tm timeinfo;
 
     time(&now);
-    tzset();
 
     localtime_r(&now, &timeinfo);
     strftime(strftime_buf, sizeof(strftime_buf), "%Y-%m-%dT%H:%M:%S", &timeinfo);
+    ESP_LOGI(TAG, "Current time: %s", strftime_buf);
     cJSON_AddStringToObject(root, "timestamp", strftime_buf);
     
     cJSON* bbox_list = cJSON_AddArrayToObject(root, "bbox");

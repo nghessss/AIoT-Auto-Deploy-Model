@@ -56,9 +56,9 @@ esp_err_t ESPCamModel::init() {
     camera_config.ledc_channel = LEDC_CHANNEL_0;
 
     camera_config.pixel_format = PIXFORMAT_JPEG;//YUV422,GRAYSCALE,RGB565,JPEG
-    camera_config.frame_size = FRAMESIZE_VGA;//QQVGA-UXGA, For ESP32, do not use sizes above QVGA when not JPEG. The performance of the ESP32-S series has improved a lot, but JPEG mode always gives better frame rates.
+    camera_config.frame_size = FRAMESIZE_HQVGA;//QQVGA-UXGA, For ESP32, do not use sizes above QVGA when not JPEG. The performance of the ESP32-S series has improved a lot, but JPEG mode always gives better frame rates.
 
-    camera_config.jpeg_quality = 9; //0-63, for OV series camera sensors, lower number means higher quality
+    camera_config.jpeg_quality = 10; //0-63, for OV series camera sensors, lower number means higher quality
     camera_config.fb_count = 2; //When jpeg mode is used, if fb_count more than one, the driver will work in continuous mode.
     camera_config.grab_mode = CAMERA_GRAB_LATEST; //CAMERA_GRAB_LATEST. Sets when buffers should be filled
     camera_config.fb_location = CAMERA_FB_IN_PSRAM;

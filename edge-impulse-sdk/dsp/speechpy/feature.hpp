@@ -233,7 +233,7 @@ public:
             }
         }
 
-        stack_frames_info_t stack_frame_info = {};
+        stack_frames_info_t stack_frame_info = { 0 };
         stack_frame_info.signal = signal;
 
         ret = processing::stack_frames(
@@ -433,7 +433,7 @@ public:
             low_frequency = 300;
         }
 
-        stack_frames_info_t stack_frame_info = {};
+        stack_frames_info_t stack_frame_info = { 0 };
         stack_frame_info.signal = signal;
 
         ret = processing::stack_frames(
@@ -573,7 +573,7 @@ public:
     {
         int ret = 0;
 
-        stack_frames_info_t stack_frame_info = {};
+        stack_frames_info_t stack_frame_info = { 0 };
         stack_frame_info.signal = signal;
 
         ret = processing::stack_frames(

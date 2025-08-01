@@ -5,13 +5,13 @@
 
 #include <functional>
 #include <cstdint>
-#include <inttypes.h>
 
 #include "app_model.h"
 #include "app_camera.h"
 #include "esp_timer.h"
 #include "edge-impulse-sdk/dsp/image/image.hpp"
-#include "encode_as_jpg.h"
+// #include "encode_as_jpg.h"
+#include "at_base64_lib.h"
 #include "app_mqtt.h"
 
 #include "freertos/FreeRTOS.h"
@@ -21,7 +21,9 @@
 // debug
 #include "esp_heap_caps.h"
 #include "stream_server.h"
-
+#include "esp_jpeg_common.h"
+#include "esp_jpeg_enc.h"
+#include "esp_sntp.h"
 
 #define EDGE_LOCATION ""
 #define EDGE_UNIT_ID ""
@@ -54,9 +56,7 @@ static bool resize_required = false;
 static bool continuous_mode = false;
 static uint32_t inference_delay;
 
-QueueHandle_t frameOut;
-
-static float confidence_level = 0.7;
+static float confidence_level = 0.5;
 
 static int ei_camera_get_data(size_t offset, size_t length, float *out_ptr)
 {
@@ -80,13 +80,11 @@ static int ei_camera_get_data(size_t offset, size_t length, float *out_ptr)
 
 void init_model() {
     ESPCamModel* cam = ESPCamModel::get_camera();
-    // frameOut = xQueueCreate(2, sizeof(camera_fb_t*));
-    // start_stream_server(frameOut, true);
 
     snapshot_resolution.width = EI_CLASSIFIER_INPUT_WIDTH;
     snapshot_resolution.height = EI_CLASSIFIER_INPUT_HEIGHT;
     fb_resolution.width = 240;
-    fb_resolution.height = 240;
+    fb_resolution.height = 176;
 
     if(!cam->init()) {
         ESP_LOGE(TAG, "Failed to init camera, check if camera is connected!");
@@ -98,10 +96,10 @@ void init_model() {
     ESP_LOGI(TAG, "Frame size: %d", EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE);
     ESP_LOGI(TAG, "No. of classes: %d", sizeof(ei_classifier_inferencing_categories) / sizeof(ei_classifier_inferencing_categories[0]));
 
-    inference_delay = 500;
+    inference_delay = 50;
     last_inference_ts = ei_read_timer_ms();
     state = INFERENCE_WAITING;
-    ei_printf("Starting inferencing in %" PRIu32 " seconds...\n", (uint32_t)(inference_delay / 1000));
+    ei_printf("Starting inferencing in %d seconds...\n", inference_delay / 1000);
 
     while(true) {
         run_model();
@@ -141,7 +139,7 @@ esp_err_t run_model() {
 
     ei_printf("Taking photo...\n");
 
-    if(camera->camera_capture_jpeg(&jpeg_img, &jpeg_img_size, frameOut) == false) {
+    if(camera->camera_capture_jpeg(&jpeg_img, &jpeg_img_size, nullptr) == false) {
         ei_printf("ERR: Failed to take a snapshot!\n");
         return ESP_FAIL;
     }
@@ -155,26 +153,12 @@ esp_err_t run_model() {
     }
 
     // no need to do anything here
-    if(camera->to_rgb888(jpeg_img, jpeg_img_size, PIXFORMAT_GRAYSCALE, snapshot_buf) == false) {
+    if(camera->to_rgb888(jpeg_img, jpeg_img_size, PIXFORMAT_JPEG, snapshot_buf) == false) {
         ei_printf("ERR: Failed to decode image\n");
         ei_free(snapshot_buf);
         ei_free(jpeg_img);
         return ESP_FAIL;
     }
-
-    // print and discard JPEG buffer before inference to free some memory
-    uint8_t* base64_img_out = nullptr;
-
-    // base64_encode((const char*)jpeg_img, jpeg_img_size, &ei_putchar);
-    base64_img_out = (uint8_t*)ei_malloc(4 * ((jpeg_img_size + 2) / 3) + 1);
-    size_t base_64_img_out_len  = base64_encode_buffer((const char*)jpeg_img, jpeg_img_size, (char*)base64_img_out, 4 * ((jpeg_img_size + 2) / 3) + 1);
-
-    if((int)base_64_img_out_len < 0) {
-        ei_printf("ERR: Failed to encode frame as base64 (%d)\n", base_64_img_out_len);
-        ei_free(base64_img_out);
-        base64_img_out = nullptr;
-    }
-
     ei_free(jpeg_img);
     jpeg_img_size = 0;
 
@@ -192,8 +176,66 @@ esp_err_t run_model() {
     int64_t fr_end = esp_timer_get_time();
 
     if (debug_mode) {
-        ei_printf("Time resizing: %" PRIu32 "\n", (uint32_t)((fr_end - fr_start)/1000));
+        ei_printf("Time resizing: %d\n", (uint32_t)((fr_end - fr_start)/1000));
     }
+
+    // encode as base64
+
+    // configure encoder
+    jpeg_enc_config_t jpeg_enc_cfg = DEFAULT_JPEG_ENC_CONFIG();
+    jpeg_enc_cfg.width = snapshot_resolution.width;
+    jpeg_enc_cfg.height = snapshot_resolution.height;
+    jpeg_enc_cfg.src_type = JPEG_PIXEL_FORMAT_RGB888;
+    jpeg_enc_cfg.subsampling = JPEG_SUBSAMPLE_420;
+    jpeg_enc_cfg.quality = 90;
+    jpeg_enc_cfg.rotate = JPEG_ROTATE_0D;
+    jpeg_enc_cfg.task_enable = false;
+    jpeg_enc_cfg.hfm_task_priority = 13;
+    jpeg_enc_cfg.hfm_task_core = 1;
+
+    jpeg_error_t ret = JPEG_ERR_OK;
+    uint8_t *inbuf = snapshot_buf;
+    int image_size = snapshot_resolution.width * snapshot_resolution.height * 3;
+    uint8_t *outbuf = NULL;
+    int outbuf_size = 100 * 1024;
+    int out_len = 0;
+    jpeg_enc_handle_t jpeg_enc = NULL;
+
+    // open
+    ret = jpeg_enc_open(&jpeg_enc_cfg, &jpeg_enc);
+    if (ret != JPEG_ERR_OK) {
+        return ret;
+    }
+
+    // allocate output buffer to fill encoded image stream
+    outbuf = (uint8_t *)calloc(1, outbuf_size);
+    if (outbuf == NULL) {
+        ret = JPEG_ERR_NO_MEM;
+        return ESP_FAIL;
+    }
+
+    // process
+    ret = jpeg_enc_process(jpeg_enc, inbuf, image_size, outbuf, outbuf_size, &out_len);
+    if (ret != JPEG_ERR_OK) {
+        return ESP_FAIL;
+    }
+
+    // close
+    jpeg_enc_close(jpeg_enc);
+
+    uint8_t* base64_img_out = nullptr;
+    base64_img_out = (uint8_t*)ei_malloc(4 * ((out_len + 2) / 3) + 1);
+    int base_64_img_out_len  = base64_encode_buffer((const char*)outbuf, out_len, (char*)base64_img_out, 4 * ((out_len + 2) / 3) + 1);
+
+    if(base_64_img_out_len < 0) {
+        ei_printf("ERR: Failed to encode frame as base64 (%d)\n", base_64_img_out_len);
+        ei_free(base64_img_out);
+        base64_img_out = nullptr;
+    }
+    if(outbuf) {
+        free(outbuf);
+    }
+    out_len = 0;
 
     ei::signal_t signal;
     signal.total_length = EI_CLASSIFIER_INPUT_WIDTH * EI_CLASSIFIER_INPUT_HEIGHT;
@@ -222,11 +264,11 @@ esp_err_t run_model() {
         }
         bbox_list[ix][0] = (strcmp(bb.label, "car") == 0 ? 0 : 1);
         // rescale so that it matches the original image coordinate
-        bbox_list[ix][1] = bb.x * 480/224 + ((640-480)/2);
-        bbox_list[ix][2] = bb.y * 480/224;
-        bbox_list[ix][3] = bb.width*(480/224);
-        bbox_list[ix][4] = bb.height*(480/224);
-        bbox_list[ix][5] = (bb.x > (224/2) ? 0 : 1);
+        bbox_list[ix][1] = bb.x;
+        bbox_list[ix][2] = bb.y;
+        bbox_list[ix][3] = bb.width;
+        bbox_list[ix][4] = bb.height;
+        bbox_list[ix][5] = (bb.x > (160/2) ? 0 : 1);
     }
 
     MQTTMessage msg{};
@@ -260,7 +302,7 @@ esp_err_t run_model() {
     state = INFERENCE_WAITING;
 
     if(continuous_mode == false) {
-        ei_printf("Starting inferencing in %" PRIu32 " seconds...\n", (uint32_t)(inference_delay / 1000));
+        ei_printf("Starting inferencing in %d seconds...\n", inference_delay / 1000);
     }
     
     return ESP_OK;

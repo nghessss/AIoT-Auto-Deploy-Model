@@ -50,10 +50,10 @@ idf_component_register(SRCS
     "app_wifi.cpp"
     "app_model.cpp" 
     "app_camera.cpp"
-    "app_ota.cpp"
+    # "app_ota.cpp"
     "${SOURCE_FILES}"
     INCLUDE_DIRS "." "${include_dirs}"
-    PRIV_REQUIRES nvs_flash esp_http_server esp_psram esp_wifi mqtt esp_timer json app_update esp_https_ota esp_netif
+    PRIV_REQUIRES nvs_flash esp_http_server esp_psram esp_wifi mqtt esp_timer json app_update esp_https_ota esp_netif esp_new_jpeg lwip
 )
 
 target_compile_options(${COMPONENT_LIB} PRIVATE -std=gnu++17)
