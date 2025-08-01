@@ -4,7 +4,10 @@ on:
   push:
     branches: [main]
     paths:
-      - '**/[Rr][Ee][Aa][Dd][Mm][Ee].md'
+      - 'readme.md'
+      - 'README.md'
+      - '**/readme.md'
+      - '**/README.md'
 
 jobs:
   build-aiot:
