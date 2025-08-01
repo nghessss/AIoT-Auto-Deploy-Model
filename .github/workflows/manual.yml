@@ -47,7 +47,11 @@ jobs:
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
 
-          git clone https://${HF_TOKEN}@huggingface.co/${HF_REPO} hf-repo
+          # ✅ Configure Git credentials
+          echo "https://${HF_TOKEN}:@huggingface.co" > ~/.git-credentials
+          git config --global credential.helper store
+
+          git clone https://huggingface.co/${HF_REPO} hf-repo
           cp aiot-bin.bin hf-repo/
 
           COMMIT_MSG=$(git log -1 --pretty=%B)
@@ -55,4 +59,7 @@ jobs:
           cd hf-repo
           git add aiot-bin.bin
           git commit -m "$COMMIT_MSG"
-          git push https://${HF_TOKEN}@huggingface.co/${HF_REPO}
+          git push
+
+          # 🧹 (optional) Remove stored credentials
+          rm ~/.git-credentials
