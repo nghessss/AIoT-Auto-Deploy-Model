@@ -5,6 +5,7 @@
 
 #include <functional>
 #include <cstdint>
+#include <inttypes.h>
 
 #include "app_model.h"
 #include "app_camera.h"
@@ -100,7 +101,7 @@ void init_model() {
     inference_delay = 500;
     last_inference_ts = ei_read_timer_ms();
     state = INFERENCE_WAITING;
-    ei_printf("Starting inferencing in %d seconds...\n", inference_delay / 1000);
+    ei_printf("Starting inferencing in %" PRIu32 " seconds...\n", (uint32_t)(inference_delay / 1000));
 
     while(true) {
         run_model();
@@ -168,7 +169,7 @@ esp_err_t run_model() {
     base64_img_out = (uint8_t*)ei_malloc(4 * ((jpeg_img_size + 2) / 3) + 1);
     size_t base_64_img_out_len  = base64_encode_buffer((const char*)jpeg_img, jpeg_img_size, (char*)base64_img_out, 4 * ((jpeg_img_size + 2) / 3) + 1);
 
-    if(base_64_img_out_len < 0) {
+    if((int)base_64_img_out_len < 0) {
         ei_printf("ERR: Failed to encode frame as base64 (%d)\n", base_64_img_out_len);
         ei_free(base64_img_out);
         base64_img_out = nullptr;
@@ -191,7 +192,7 @@ esp_err_t run_model() {
     int64_t fr_end = esp_timer_get_time();
 
     if (debug_mode) {
-        ei_printf("Time resizing: %d\n", (uint32_t)((fr_end - fr_start)/1000));
+        ei_printf("Time resizing: %" PRIu32 "\n", (uint32_t)((fr_end - fr_start)/1000));
     }
 
     ei::signal_t signal;
@@ -259,7 +260,7 @@ esp_err_t run_model() {
     state = INFERENCE_WAITING;
 
     if(continuous_mode == false) {
-        ei_printf("Starting inferencing in %d seconds...\n", inference_delay / 1000);
+        ei_printf("Starting inferencing in %" PRIu32 " seconds...\n", (uint32_t)(inference_delay / 1000));
     }
     
     return ESP_OK;
