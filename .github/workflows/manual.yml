@@ -1,0 +1,70 @@
+name: Build and Upload AIoT Model
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-aiot:
+    runs-on: ubuntu-latest
+
+    env:
+      EI_API_KEY: ${{ secrets.EI_API_KEY }}
+      EI_PROJECT_ID: 749177
+      HF_TOKEN: ${{ secrets.HUGGING_FACE_TOKEN }}
+      HF_REPO: nghes/ei-models
+
+    steps:
+      - name: 🔄 Checkout repository
+        uses: actions/checkout@v3
+
+      - name: 📦 Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y unzip curl git-lfs
+
+      - name: 📥 Download and unzip Edge Impulse model
+        run: |
+          curl -L \
+            --url "https://studio.edgeimpulse.com/v1/api/${EI_PROJECT_ID}/deployment/download?type=zip&impulse=16" \
+            --header "x-api-key: ${EI_API_KEY}" \
+            --header "Accept: */*" \
+            --output model.zip && unzip -o model.zip -d model/
+
+      - name: 📂 Copy model files to project root
+        run: |
+          cp -r model/model-parameters ./model-parameters
+          cp -r model/tflite-model ./tflite-model
+
+      - name: 🛠 Run build script
+        run: |
+          git config --global --add safe.directory /opt/esp/idf/components/openthread/openthread
+          chmod +x ./build.sh
+          ./build.sh
+
+      - name: 📤 Push aiot-bin.bin to Hugging Face Hub via Python
+        env:
+          HF_TOKEN: ${{ secrets.HUGGING_FACE_TOKEN }}
+          HF_REPO: nghes/ei-models
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+        run: |
+          pip install huggingface_hub
+
+          cat > push_binary.py << 'EOF'
+          import os
+          from huggingface_hub import HfApi, upload_file
+
+          token = os.environ["HF_TOKEN"]
+          repo_id = os.environ["HF_REPO"]
+          filepath = "aiot-bin.bin"
+          commit_msg = os.getenv("COMMIT_MSG", f"Update {filepath}")
+
+          api = HfApi(token=token)
+          api.upload_file(
+              path_or_fileobj=filepath,
+              path_in_repo=os.path.basename(filepath),
+              repo_id=repo_id,
+              commit_message=commit_msg,
+          )
+          print(f"✅ {filepath} uploaded to {repo_id}")
+          EOF
+
+          python push_binary.py
