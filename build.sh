@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-DOCKER="docker run --rm -v $PWD:/project -w /project -u $UID -e HOME=/tmp espressif/idf"
+DOCKER="docker run --rm -v $PWD:/project -w /project -e HOME=/tmp espressif/idf"
 
 echo "🧹 Cleaning..."
 $DOCKER idf.py fullclean
