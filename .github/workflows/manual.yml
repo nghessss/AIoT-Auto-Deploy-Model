@@ -15,6 +15,12 @@ jobs:
       HF_REPO: nghes/ei-models
 
     steps:
+      - name: 🧰 Set up QEMU for ARM emulation
+        uses: docker/setup-qemu-action@v3
+
+      - name: 🐳 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: 🔄 Checkout repository
         uses: actions/checkout@v3
 
@@ -28,13 +34,16 @@ jobs:
             --header "x-api-key: ${EI_API_KEY}" \
             --header "Accept: */*" \
             --output model.zip && unzip -o model.zip -d model/
+
       - name: 📂 Copy model files to project root
         run: |
           cp -r model/model-parameters ./model-parameters
           cp -r model/tflite-model ./tflite-model
-      - name: 🛠 Run build script
+
+      - name: 🛠 Run build script using ARM64 container
         run: |
           git config --global --add safe.directory /opt/esp/idf/components/openthread/openthread
+          chmod +x ./build.sh
           ./build.sh
 
       - name: 📤 Push aiot-bin.bin to Hugging Face Hub
