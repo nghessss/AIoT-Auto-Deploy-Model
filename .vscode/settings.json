@@ -91,7 +91,9 @@
     "stack": "cpp",
     "jpeg_decoder.h": "c",
     "test_encoder.h": "c",
-    "stdint.h": "c"
+    "stdint.h": "c",
+    "esp_ota_ops.h": "c",
+    "esp_https_ota.h": "c"
   },
   "idf.flashType": "UART",
   "idf.port": "/dev/ttyUSB0",

@@ -12,6 +12,7 @@
 #include "app_wifi.h"
 #include "app_mqtt.h"
 #include "app_model.h"
+#include "app_ota.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -25,5 +26,6 @@ extern "C" void app_main(void) {
 
     app_wifi_main();
     app_mqtt_main();
+    check_for_update();
     init_model();
 }
