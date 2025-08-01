@@ -33,9 +33,14 @@ jobs:
             --header "x-api-key: ${EI_API_KEY}" \
             --header "Accept: */*" \
             --output model.zip && unzip -o model.zip -d model/
-
+      - name: 📂 Copy model files to project root
+        run: |
+          cp -r model/model-parameters ./model-parameters
+          cp -r model/tflite-model ./tflite-model
       - name: 🛠 Run build script
-        run: ./build.sh
+        run: |
+          git config --global --add safe.directory /opt/esp/idf/components/openthread/openthread
+          ./build.sh
 
       - name: 📤 Push aiot-bin.bin to Hugging Face Hub
         env:
