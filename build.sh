@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-DOCKER="docker run --rm --platform=linux/amd64 -v $PWD:/project -w /project -e HOME=/tmp espressif/idf:release-v5.5"
+DOCKER="docker run --rm --platform=linux/amd64 -v $PWD:/project -w /project -e HOME=/tmp voasd00/esp-idf-stable:latest"
 
 echo "🧹 Cleaning..."
 $DOCKER idf.py fullclean
