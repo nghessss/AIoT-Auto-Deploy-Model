@@ -54,7 +54,7 @@ jobs:
 
           token = os.environ["HF_TOKEN"]
           repo_id = os.environ["HF_REPO"]
-          filepath = "aiot-bin.bin"
+          filepath = "./build/AIoT.bin"
           commit_msg = os.getenv("COMMIT_MSG", f"Update {filepath}")
 
           api = HfApi(token=token)
