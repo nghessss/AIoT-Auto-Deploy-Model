@@ -34,6 +34,9 @@ jobs:
             --header "Accept: */*" \
             --output model.zip && unzip -o model.zip -d model/
 
+      - name: 🛠 Run build script
+        run: ./build.sh
+
       - name: 📤 Push aiot-bin.bin to Hugging Face Hub
         env:
           HF_HOME: /tmp
