@@ -40,26 +40,31 @@ jobs:
           chmod +x ./build.sh
           ./build.sh
 
-      - name: 📤 Push aiot-bin.bin to Hugging Face Hub
+      - name: 📤 Push aiot-bin.bin to Hugging Face Hub via Python
         env:
-          HF_HOME: /tmp
+          HF_TOKEN: ${{ secrets.HUGGING_FACE_TOKEN }}
+          HF_REPO: nghes/ei-models
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
         run: |
-          git config --global user.email "action@github.com"
-          git config --global user.name "GitHub Action"
+          pip install huggingface_hub
 
-          # ✅ Configure Git credentials
-          echo "https://${HF_TOKEN}:@huggingface.co" > ~/.git-credentials
-          git config --global credential.helper store
+          cat > push_binary.py << 'EOF'
+          import os
+          from huggingface_hub import HfApi, upload_file
 
-          git clone https://huggingface.co/${HF_REPO} hf-repo
-          cp aiot-bin.bin hf-repo/
+          token = os.environ["HF_TOKEN"]
+          repo_id = os.environ["HF_REPO"]
+          filepath = "aiot-bin.bin"
+          commit_msg = os.getenv("COMMIT_MSG", f"Update {filepath}")
 
-          COMMIT_MSG=$(git log -1 --pretty=%B)
+          api = HfApi(token=token)
+          api.upload_file(
+              path_or_fileobj=filepath,
+              path_in_repo=os.path.basename(filepath),
+              repo_id=repo_id,
+              commit_message=commit_msg,
+          )
+          print(f"✅ {filepath} uploaded to {repo_id}")
+          EOF
 
-          cd hf-repo
-          git add aiot-bin.bin
-          git commit -m "$COMMIT_MSG"
-          git push
-
-          # 🧹 (optional) Remove stored credentials
-          rm ~/.git-credentials
+          python push_binary.py
