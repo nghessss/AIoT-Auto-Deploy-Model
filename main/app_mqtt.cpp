@@ -14,7 +14,7 @@
 #include "cJSON.h"
 
 static const char *TAG = "AIoT: AutoEye";
-static const char *MQTT_BROKER_URI = "mqtt://192.168.0.41";
+static const char *MQTT_BROKER_URI = "mqtt://10.124.3.160";
 static const int MQTT_BROKER_PORT = 1883;
 static const char *MQTT_TOPIC = "aiot/data";
 static const char *MQTT_USERNAME = "aiot";

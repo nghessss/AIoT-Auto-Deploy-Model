@@ -26,6 +26,6 @@ extern "C" void app_main(void) {
 
     app_wifi_main();
     app_mqtt_main();
-    check_for_update();
+    // check_for_update();
     init_model();
 }
